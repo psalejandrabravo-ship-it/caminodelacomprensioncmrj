@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Maximize, Minimize } from "lucide-react";
 import { stationById, type StationId } from "@/content/camino";
 import { fichaById } from "@/content/fichas";
@@ -6,7 +6,7 @@ import { videoSources } from "@/content/videos";
 import { activeStation, useSession } from "@/components/camino/session";
 import { PreguntaEstacion } from "@/components/camino/estacion-uno";
 
-const WHITE_LOGO = "/brand/01-Logotipo/MIRARIM-horizontal-blanco.svg";
+const SCHOOL_LOGO = "/brand/colegio-metodista.png";
 
 const panels: Record<StationId, { title: string; text: string; guide: string }> = {
   1: {
@@ -50,44 +50,6 @@ const SPOTS = [
   { x: 78.3, y: 68.7 },
 ];
 
-function httpUrl(value: string): string | null {
-  try {
-    const url = new URL(value.trim());
-    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
-function shrinkLogo(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const img = new Image();
-    const local = URL.createObjectURL(file);
-    img.onload = () => {
-      const max = 280;
-      const scale = Math.min(1, max / img.width);
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(img.width * scale));
-      canvas.height = Math.max(1, Math.round(img.height * scale));
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("canvas"));
-        return;
-      }
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const png = file.type === "image/png" || file.type === "image/webp";
-      resolve(png ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.72));
-      URL.revokeObjectURL(local);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(local);
-      reject(new Error("image"));
-    };
-    img.src = local;
-  });
-}
-
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
     void document.documentElement.requestFullscreen?.().catch(() => undefined);
@@ -116,90 +78,18 @@ export function CaminoSwitch() {
 }
 
 function LogoMark() {
-  const { logoSrc, logoHref } = useSession();
-  const src = logoSrc || WHITE_LOGO;
-  const image = (
-    <img
-      src={src}
-      alt={logoSrc ? "Logo del jardín" : "MIRARIM"}
-      className="logo-plain h-12 w-auto max-w-56 object-contain md:h-14"
-    />
-  );
-  const href = httpUrl(logoHref);
-  if (!href) return image;
   return (
-    <a href={href} target="_blank" rel="noreferrer">
-      {image}
-    </a>
+    <img
+      src={SCHOOL_LOGO}
+      alt="Colegio Metodista Robert Johnson, Alto Hospicio"
+      className="h-24 w-auto object-contain drop-shadow-md md:h-32"
+    />
   );
 }
 
 function Portada() {
-  const { begin, setLogo, logoSrc } = useSession();
-  const [open, setOpen] = useState(false);
-  const [image, setImage] = useState("");
-  const [link, setLink] = useState("");
-  const [error, setError] = useState("");
-  const [share, setShare] = useState("");
-  const [copied, setCopied] = useState(false);
+  const { begin } = useSession();
   const full = useFullscreenFlag();
-  const titleId = useId();
-
-  function saveLogo() {
-    const href = link.trim();
-    if (href && !httpUrl(href)) {
-      setError("El enlace del logo debe empezar por https://");
-      return;
-    }
-    if (image && !image.startsWith("data:image/") && !httpUrl(image)) {
-      setError("Adjunta una imagen o usa un enlace https://");
-      return;
-    }
-    setError("");
-    setLogo(image || null, href ? httpUrl(href) || "" : "");
-    setOpen(false);
-  }
-
-  async function onFile(file: File) {
-    setError("");
-    setCopied(false);
-    try {
-      const data = await shrinkLogo(file);
-      if (data.length > 180000) {
-        setError("Esa imagen es muy pesada. Prueba con un logo más simple.");
-        return;
-      }
-      setImage(data);
-    } catch {
-      setError("No se pudo leer esa imagen.");
-    }
-  }
-
-  async function createLink() {
-    const src = image || logoSrc || "";
-    if (!src) {
-      setError("Primero adjunta el logo.");
-      return;
-    }
-    const href = link.trim();
-    if (href && !httpUrl(href)) {
-      setError("El enlace del logo debe empezar por https://");
-      return;
-    }
-    setError("");
-    setLogo(src, href ? httpUrl(href) || "" : "");
-    const params = new URLSearchParams();
-    params.set("logo", src);
-    if (href && httpUrl(href)) params.set("href", httpUrl(href) || "");
-    const url = `${window.location.origin}${window.location.pathname}#${params.toString()}`;
-    setShare(url);
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
 
   return (
     <div className="relative min-h-dvh">
@@ -216,7 +106,7 @@ function Portada() {
           {full ? "Salir de pantalla completa" : "Ampliar pantalla"}
         </button>
       </header>
-      <div className="relative z-10 mx-auto flex min-h-[70dvh] max-w-3xl flex-col items-center justify-end px-4 pb-10 text-center">
+      <div className="relative z-10 mx-auto flex min-h-[70dvh] max-w-3xl flex-col items-center justify-end px-4 pb-16 text-center">
         <h1 id="titulo-pantalla" className="text-4xl font-extrabold leading-tight text-cream md:text-6xl">
           El camino de la comprensión
         </h1>
@@ -227,88 +117,11 @@ function Portada() {
           <button type="button" className="btn btn-coral px-10 text-xl" onClick={begin}>
             Comenzar
           </button>
-          <a className="btn btn-ghost bg-cream no-underline" href="/guias/laberinto-buenas-decisiones.pdf" download="El-laberinto-de-las-buenas-decisiones.pdf">
-            Descargar guía
-          </a>
-          <button type="button" className="btn btn-ghost bg-cream" onClick={() => setOpen(true)}>
-            Personalización
-          </button>
         </div>
       </div>
-      {open ? (
-        <div className="absolute inset-0 z-20 flex items-end justify-center bg-ink/50 p-4 sm:items-center" role="presentation">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            className="panel w-full max-w-lg bg-cream"
-          >
-            <h2 id={titleId} className="text-2xl font-extrabold text-indigo">
-              Personalización
-            </h2>
-            <p className="mt-2 text-base">Adjunta el logo del jardín. Reemplaza a MIRARIM. Luego puedes crear un enlace para compartirlo.</p>
-            <label className="mt-4 block text-base font-extrabold text-indigo" htmlFor="logo-file">
-              Logo
-            </label>
-            <input
-              id="logo-file"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className="mt-1 w-full text-base"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void onFile(file);
-              }}
-            />
-            {image.startsWith("data:image/") ? (
-              <img src={image} alt="Vista previa del logo" className="mt-3 h-14 w-auto bg-indigo p-2" />
-            ) : null}
-            <label className="mt-4 block text-base font-extrabold text-indigo" htmlFor="logo-href">
-              Enlace al pulsar el logo
-            </label>
-            <input
-              id="logo-href"
-              value={link}
-              onChange={(event) => setLink(event.target.value)}
-              placeholder="https://"
-              className="mt-1 w-full rounded-xl border-2 border-indigo bg-cream px-3 py-3 text-lg"
-            />
-            {share ? (
-              <label className="mt-4 block text-base font-extrabold text-indigo" htmlFor="logo-share">
-                Enlace para compartir {copied ? "(copiado)" : ""}
-              </label>
-            ) : null}
-            {share ? (
-              <input id="logo-share" readOnly value={share} className="mt-1 w-full rounded-xl border-2 border-indigo bg-cream px-3 py-3 text-sm" />
-            ) : null}
-            {error ? <p className="mt-2 text-base font-semibold text-indigo">{error}</p> : null}
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button type="button" className="btn btn-indigo" onClick={saveLogo}>
-                Guardar
-              </button>
-              <button type="button" className="btn btn-coral" onClick={() => void createLink()}>
-                Crear enlace
-              </button>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => {
-                  setImage("");
-                  setLink("");
-                  setError("");
-                  setLogo(null, "");
-                  setOpen(false);
-                }}
-              >
-                Logo MIRARIM
-              </button>
-              <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <p className="absolute inset-x-0 bottom-3 z-10 text-center text-xs font-medium text-cream/75">
+        Psicóloga Alejandra Bravo Pino
+      </p>
     </div>
   );
 }

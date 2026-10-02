@@ -8,7 +8,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "MIRARIM · El camino de la comprensión" },
+      { title: "El camino de la comprensión" },
       { name: "theme-color", content: "#2B2155" },
       {
         name: "description",
@@ -21,7 +21,7 @@ export const Route = createRootRoute({
         rel: "icon",
         type: "image/png",
         sizes: "16x16",
-        href: "/brand/02-Isotipo/MIRARIM-favicon-16.png",
+        href: "/brand/colegio-metodista.png",
       },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
